@@ -1,0 +1,17 @@
+<html>
+  <form action ="http://localhost:3000/session" method="POST">
+    <input type="hidden" name="my_authenticity_token" value="<%= my_form_authenticity_token %>">
+
+    <label for="username">Username</label>
+    <input type="text" name="user[username]" id="username">
+
+    <br>
+
+    <label for="password">Password</label>
+    <input type="text" name="user[password]" id="password">
+
+    <br>
+
+    <input type="submit" value="Sign In!">
+  </form>
+</html>

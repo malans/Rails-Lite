@@ -1,0 +1,8 @@
+<html>
+<h3>All Users</h3>
+  <ul>
+    <% @users.each do |user| %>
+      <a href="http://localhost:3000/users/<%= user.id %>"><%= user.username %></a>
+    <% end %>
+  </ul>
+</html>
