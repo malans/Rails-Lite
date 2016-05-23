@@ -11,7 +11,8 @@ class UsersController < ApplicationController
   end
 
   def create
-    @user = User.new(params["user"]["username"], params["user"]["password"])  # implement require and permit
+    debugger;
+    @user = User.new(params["user"])  # implement require and permit
     if @user.save
       sign_in(@user)
       render :show

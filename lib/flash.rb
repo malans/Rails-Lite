@@ -14,6 +14,11 @@ class Flash
     end
   end
 
+  def each(&prc)
+    @flash_now.each { |name, msg| prc.call(name, msg) }
+    @flash.each { |name, msg| prc.call(name, msg) }
+  end
+
   def now
     @flash_now
   end

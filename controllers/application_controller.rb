@@ -1,5 +1,7 @@
 class ApplicationController < ControllerBase
 
+  protect_from_forgery with: :exception
+
   def sign_in(user)
     @current_user = user
     session[:session_token] = user.session_token

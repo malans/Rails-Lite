@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+</head>
+  <body>
+    <ul>
+      <% flash.each do |name, msg| %>
+        <li><%= name %>: <%= msg %></li>
+      <% end %>
+    </ul>
+
+    <%= template_code %>
+
+  </body>
+</html>
