@@ -4,6 +4,11 @@ require 'bcrypt'
 require 'byebug'
 
 class SQLObject
+  # after_initialize_methods should be a class instance variable, unique to
+  # each subclass of SQLObject
+  class << self
+    attr_accessor :after_initialize_methods
+  end
 
   def self.columns
     # queries the database for columns if @columns has not been set yet
@@ -87,11 +92,15 @@ class SQLObject
         raise UnknownAttributeError, "Unknown attribute '#{attr_name}'"
       end
     end
-    @@after_initialize_methods.each { |method| self.send(method) }
+    debugger;
+    unless self.class.after_initialize_methods.nil?
+      self.class.after_initialize_methods.each { |method| self.send(method) }
+    end
   end
 
   def self.after_initialize(*methods)
-    @@after_initialize_methods = methods
+    debugger;
+    @after_initialize_methods = methods
   end
 
   def attributes

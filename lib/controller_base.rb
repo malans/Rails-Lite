@@ -3,13 +3,14 @@ require 'active_support/core_ext'
 require 'erb'
 require_relative './session'
 require_relative './flash'
+require_relative './action_queue'
 
 require 'active_support/inflector'
 
 class ControllerBase
   attr_reader :req, :res, :params
 
-  @@action_queue = []
+  @@action_queue = ActionQueue.new
 
   # Setup the controller
   def initialize(req, res, route_params = {})
@@ -33,8 +34,12 @@ class ControllerBase
 
   def self.protect_from_forgery(options = {})
     if options[:with] == :exception
-      @@action_queue.unshift(:validate_authenticity_token)
+      @@action_queue.add_before_action(:validate_authenticity_token)
     end
+  end
+
+  def self.before_action(*methods)
+    @@action_queue.add_before_action(methods)
   end
 
   # Helper method to alias @already_built_response
@@ -107,17 +112,9 @@ class ControllerBase
   end
 
   # use this with the router to call action_name (:index, :show, :create...)
-  def invoke_action(name)
-    debugger;
-    @@action_queue.push(name)
-    @@action_queue.each { |action| self.send(action) }
-    render(name) unless @already_built_response
-  end
-end
-
-class ActionQueue
-  def initialize(protect_from_forgery_strategy = nil, action_queue = [])
-    @protect_from_forgery_strategy = protect_from_forgery_strategy
-    @action_queue = action_queue
+  def invoke_action(action)
+    @@action_queue.add_action(action)
+    @@action_queue.execute(self)
+    render(action) unless @already_built_response
   end
 end
