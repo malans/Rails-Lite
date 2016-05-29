@@ -23,14 +23,12 @@ class ControllerBase
   end
 
   def validate_authenticity_token
-    debugger;
     return if req.request_method == "GET"
     return if session["my_form_authenticity_token"] == params["my_authenticity_token"]
     raise "CSRF Attack Detected"
   end
 
   def my_form_authenticity_token
-    debugger;
     session["my_form_authenticity_token"] ||= SecureRandom::urlsafe_base64
   end
 
@@ -81,7 +79,6 @@ class ControllerBase
   # use ERB and binding to evaluate templates
   # pass the rendered html to render_content
   def render(template_name)
-    debugger;
     # construct path for template_name
     # template naming convention used: "views/#{controller_name}/#{template_name}.html.erb"
     dir_path = File.dirname(__FILE__)

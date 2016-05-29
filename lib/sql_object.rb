@@ -107,9 +107,20 @@ class SQLObject
     end
   end
 
-  def ==(other)
-    self.class.table_name == other.class.table_name &&
-    self.attributes.keys.all? { |attr| send(attr) == other.send(attr)}
+  def ==(otherObject)
+    self.class.table_name == otherObject.class.table_name &&
+    self.attributes.keys.all? { |attr| send(attr) == otherObject.send(attr)}
+  end
+
+  def equal_column_values?(*columns, otherObject)
+    begin
+      columns.each do |column|
+        return false if self.send(column.to_sym) != otherObject.send(column.to_sym)
+      end
+    rescue NoMethodError
+      raise UnknownAttributeError, "Unknown attribute"
+    end
+    true
   end
 
   def self.create(params = {})
@@ -141,14 +152,12 @@ class SQLObject
     columns = self.class.columns.drop(1)
     col_names = columns.map(&:to_s).join(", ")
     question_marks = (["?"] * columns.count).join(", ")
-    debugger;
     results = DBConnection.execute(<<-SQL, *attribute_values.drop(1))
       INSERT INTO
         #{self.class.table_name} (#{col_names})
       VALUES
         (#{question_marks})
     SQL
-    debugger;
     self.id = DBConnection.last_insert_row_id
   end
 
@@ -165,16 +174,21 @@ class SQLObject
   end
 
   def errors
-    @errors ||= {}
+    @errors ||= reset_errors
+  end
+
+  def reset_errors
+    @errors = Hash.new { |h,k| h[k] = [] }
   end
 
   def errors=(column, message)
     errors[column] = message
   end
 
+
   def valid?
+    reset_errors
     self.class.validation_options.each do |type, validation_options|
-      debugger;
       validation_options.each { |validation_option| validation_option.validate(self) }
     end
 
@@ -183,7 +197,6 @@ class SQLObject
   end
 
   def save
-    debugger;
     if valid?
       id.nil? ? insert : update
       return true

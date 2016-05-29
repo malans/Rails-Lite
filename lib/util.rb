@@ -1,5 +1,5 @@
 module Util
-  def blank?
-    respond_to?(:empty?) ? !!empty? : !self
+  def blank?(object)
+    object.respond_to?(:empty?) ? !!object.empty? : !object
   end
 end
