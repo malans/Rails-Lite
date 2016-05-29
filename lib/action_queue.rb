@@ -6,13 +6,21 @@ class ActionQueue
     @action_queue = action_queue
   end
 
-  def execute(object)
-    @before_action.each do |action|
-      object.send(action)
+  def clearActionQueue
+    @action_queue = []
+  end
+
+  def execute(controller, action)
+    @before_action.each do |method, options|
+      controller.send(method) if options[:only] == :all or options[:only].include?(action)
+      if controller.already_built_response?
+        clearActionQueue
+        return
+      end
     end
-    # object.send(@protect_from_forgery_strategy) unless @protect_from_forgery_strategy.nil?
+
     until @action_queue.empty?
-      object.send(@action_queue.shift)
+      controller.send(@action_queue.shift)
     end
   end
 
@@ -20,7 +28,15 @@ class ActionQueue
     @action_queue.push(action)
   end
 
-  def add_before_action(*actions)
-    @before_action.concat(actions)
+  def add_before_action(*methods, **options)
+    # options is a hash with a key :only
+    # default value is :all which means the methods should be executed before
+    # all actions
+    defaults = { only: :all }
+    options = defaults.merge(options)
+    methods.each do |method|
+      @before_action.push([method, options])
+    end
+    # @before_action.concat(actions)
   end
 end

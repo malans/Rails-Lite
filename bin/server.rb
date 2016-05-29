@@ -1,7 +1,7 @@
-
 require 'rack'
 require_relative '../lib/controller_base'
 require_relative '../lib/router'
+Dir['./models/*.rb'].each {|file| require file }
 require 'byebug'
 
 # global to be accessible in config.routes

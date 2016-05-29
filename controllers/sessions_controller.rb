@@ -19,7 +19,7 @@ class SessionsController < ApplicationController
 
   def destroy
     logout!
-    redirect_to "http://localhost:3000/sessions/new"
+    redirect_to "http://localhost:3000/"
   end
 
 end

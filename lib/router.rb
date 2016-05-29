@@ -8,7 +8,9 @@ class Route
 
   # checks if pattern matches path and method matches request method
   def matches?(req)
-    (req.request_method.downcase.to_sym == @http_method) && !!(@pattern =~ req.path)
+    # check params for DELETE or PATCH/PUT requests
+    request_method = req.params["_method"].nil? ? req.request_method : req.params["_method"]
+    (request_method.downcase.to_sym == @http_method) && !!(@pattern =~ req.path)
   end
 
   # use pattern to pull out route params (save for later?)

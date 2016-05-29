@@ -3,7 +3,22 @@ require 'byebug'
 
 class User < SQLObject
   finalize!
+
+  attr_reader :password
+
+  validates :username, :password_digest, :session_token, presence: true
+  validates :password, length: { minimum: 6, allow_nil: true }
+
   after_initialize :ensure_session_token
+
+  has_many :friendships
+  has_many :inverse_friendships,
+    foreign_key: :friend_id,
+    primary_key: :id,
+    class_name: "Friendship"
+
+  has_many_through :friends, :friendships, :friend
+
 
   def self.find_by_credentials(username, password)
     user = User.find_by_username(username)
@@ -22,6 +37,12 @@ class User < SQLObject
 
   def self.generate_session_token
     SecureRandom.urlsafe_base64(16)
+  end
+
+  def reset_session_token!
+    self.session_token = User.generate_session_token
+    self.save
+    self.session_token
   end
 
 end

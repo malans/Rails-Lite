@@ -4,13 +4,22 @@
   <title></title>
 </head>
   <body>
+    <div>
+      <% if current_user %>
+        <form action="http://localhost:3000/session" method="POST">
+          <input type="hidden" name="_method" value="DELETE">
+          <input type="hidden" name="my_authenticity_token" value="<%= my_form_authenticity_token %>">
+          <input type="submit" value="Logout">
+        </form>
+      <% end %>
+    </div>
     <ul>
       <% flash.each do |name, msg| %>
         <li><%= name %>: <%= msg %></li>
       <% end %>
     </ul>
 
-    <%= template_code %>
+    <%= yield %>
 
   </body>
 </html>

@@ -6,7 +6,7 @@ SQL_FILE = File.join(ROOT_FOLDER, 'db/users.sql')
 DB_FILE = File.join(ROOT_FOLDER, 'db/users.db')
 
 # SQL_FILE = Dir['./db/*.sql'].first
-DB_FILES = Dir['./db/*.db'].first
+DB_FILES = Dir['./db/*.db']
 
 # if DB_FILE.nil?
 

@@ -1,6 +1,34 @@
 <html>
   <div>
-    Welcome <%= @user.username %>
+    <% if current_user.id == @user.id %>
+      Welcome <%= current_user.username %>
+    <% else %>
+      <%= @user.username %>
+    <% end %>
+  </div>
+  <br>
+
+  <% unless current_user == @user || current_user.friends.include?(@user) %>
+    <div>
+      <form action="http://localhost:3000/friendships" method="POST">
+        <input type="hidden" name="my_authenticity_token" value="<%= my_form_authenticity_token %>">
+        <input type="hidden" name="friendship[requesting_id]" value="<%= current_user.id %>">
+        <input type="hidden" name="friendship[requested_id]" value="<%= @user.id %>">
+        <input type="submit" value="Add Friend">
+      </form>
+    </div>
+  <% end %>
+  <br>
+
+  <div>
+    Friends
+    <ul>
+      <% @user.friends.each do |friend| %>
+        <li>
+          <a href="http://localhost:3000/users/<%= friend.id %>"><%= friend.username %></a>
+        </li>
+      <% end %>
+    </ul>
   </div>
 
   <div>

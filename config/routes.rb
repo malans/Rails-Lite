@@ -10,4 +10,6 @@ $router.draw do
   post Regexp.new(/^\/users$/), UsersController, :create
   get Regexp.new(/^\/session\/new$/), SessionsController, :new
   post Regexp.new(/^\/session$/), SessionsController, :create
+  delete Regexp.new(/^\/session$/), SessionsController, :destroy
+  post Regexp.new(/^\/friendships$/), FriendshipsController, :create
 end

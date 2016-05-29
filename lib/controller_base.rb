@@ -23,23 +23,26 @@ class ControllerBase
   end
 
   def validate_authenticity_token
+    debugger;
     return if req.request_method == "GET"
     return if session["my_form_authenticity_token"] == params["my_authenticity_token"]
     raise "CSRF Attack Detected"
   end
 
   def my_form_authenticity_token
-    session[:my_form_authenticity_token] ||= SecureRandom::urlsafe_base64
+    debugger;
+    session["my_form_authenticity_token"] ||= SecureRandom::urlsafe_base64
   end
 
   def self.protect_from_forgery(options = {})
     if options[:with] == :exception
-      @@action_queue.add_before_action(:validate_authenticity_token)
+      before_action :validate_authenticity_token
+      # @@action_queue.add_before_action(:validate_authenticity_token)
     end
   end
 
-  def self.before_action(*methods)
-    @@action_queue.add_before_action(methods)
+  def self.before_action(*methods, **options)
+    @@action_queue.add_before_action(*methods, options)
   end
 
   # Helper method to alias @already_built_response
@@ -78,6 +81,7 @@ class ControllerBase
   # use ERB and binding to evaluate templates
   # pass the rendered html to render_content
   def render(template_name)
+    debugger;
     # construct path for template_name
     # template naming convention used: "views/#{controller_name}/#{template_name}.html.erb"
     dir_path = File.dirname(__FILE__)
@@ -97,9 +101,15 @@ class ControllerBase
     # call render_content to place the template_code in the body of the HTTP response
     # use Kernel#binding to capture the controller's instance variables
     render_content(
-      ERB.new(layout_template_code).result(binding),  # evaluate the template_code with packaged environment bindings
+      render_erb(layout_template_code) { template_code }, # evaluate the template_code with packaged environment bindings
       "text/html"
     )
+  end
+
+  def render_erb(template)
+    # This is the way to evaluate an erb template that has a yield statement in it
+    # A block passed in to this method will be available in binding
+    ERB.new(template).result(binding)
   end
 
   # method exposing a `Session` object
@@ -111,10 +121,14 @@ class ControllerBase
     @flash ||= Flash.new(@req)
   end
 
+  def already_built_response?
+    @already_built_response
+  end
+
   # use this with the router to call action_name (:index, :show, :create...)
   def invoke_action(action)
     @@action_queue.add_action(action)
-    @@action_queue.execute(self)
+    @@action_queue.execute(self, action)
     render(action) unless @already_built_response
   end
 end
