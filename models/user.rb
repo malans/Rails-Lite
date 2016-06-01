@@ -33,6 +33,8 @@ class User < SQLObject
   #   class_name: "Friendship"
 
   has_many_through :friends, :accepted_friendship_requests, :friend
+  has_many_through :requested_friends, :sent_friendship_requests, :friend
+  has_many_through :pending_friends, :pending_friendship_requests, :user
 
 
   def self.find_by_credentials(username, password)
@@ -59,15 +61,6 @@ class User < SQLObject
     self.save
     self.session_token
   end
-
-  def requested_friends
-    friendship_requests = friendships.select do |friendship|
-      friendship.status = "REQUESTED"
-    end
-
-    friendship_requests.collect { |friendship_request| friendship_request.friend }
-  end
-
 end
 
 def ensure_session_token

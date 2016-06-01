@@ -6,24 +6,37 @@
       <%= @user.username %>
     <% end %>
   </div>
+
   <br>
 
-<% # Add Friend Button %>
   <% unless current_user == @user || current_user.friends.include?(@user) %>
-    <div>
-      <form action="http://localhost:3000/friendships" method="POST">
-        <input type="hidden" name="my_authenticity_token" value="<%= my_form_authenticity_token %>">
-        <input type="hidden" name="friendship[requesting_id]" value="<%= current_user.id %>">
-        <input type="hidden" name="friendship[requested_id]" value="<%= @user.id %>">
-        <input type="submit" value="Add Friend">
-      </form>
-    </div>
+    <% if current_user.pending_friends.include?(@user) %>
+      <div>
+        <form action="http://localhost:3000/friendships/<%= pending_friendship_request.id %>" method="POST">
+          <input type="hidden" name="_method" value="PUT">
+          <input type="hidden" name="my_authenticity_token" value="<%= my_form_authenticity_token %>">
+          <input type="submit" value="Accept">
+        </form>
+      </div>
+    <% elsif current_user.requested_friends.include?(@user) %>
+      <div>
+        <button type="button" disabled>Friend requested</button>
+      </div>
+    <% else %>
+      <div>
+        <form action="http://localhost:3000/friendships" method="POST">
+          <input type="hidden" name="my_authenticity_token" value="<%= my_form_authenticity_token %>">
+          <input type="hidden" name="friendship[requesting_id]" value="<%= current_user.id %>">
+          <input type="hidden" name="friendship[requested_id]" value="<%= @user.id %>">
+          <input type="submit" value="Add Friend">
+        </form>
+      </div>
   <% end %>
+
   <br>
 
-<% # Friend Requests Sent  %>
   <div>
-    Sent Friend Requests
+    <p>Sent Friend Requests</p>
     <ul>
       <% @user.requested_friends.each do |requested_friend| %>
         <li>
@@ -33,9 +46,26 @@
     </ul>
   </div>
 
-<% # Pending Friend Requests Received %>
+  <br>
 
-<% # Display All Friends %>
+  <div>
+    Friend Requests Received
+    <ul>
+      <% @user.pending_friendship_requests.each do |pending_friendship_request| %>
+        <li>
+          <a href="http://localhost:3000/users/<%= pending_friendship_request.friend.id %>"><%= pending_friendship_request.user.username %></a>
+          <form action="http://localhost:3000/friendships/<%= pending_friendship_request.id %>" method="POST">
+            <input type="hidden" name="_method" value="PUT">
+            <input type="hidden" name="my_authenticity_token" value="<%= my_form_authenticity_token %>">
+            <input type="submit" value="Accept">
+          </form>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+
+  <br>
+
   <div>
     Friends
     <ul>
@@ -47,7 +77,6 @@
     </ul>
   </div>
 
-<% # Link to See All Users %>
   <div>
     <a href="http://localhost:3000/users">See All Users</a>
   </div>

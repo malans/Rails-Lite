@@ -44,11 +44,12 @@ class Relation
     end
 
     @query_result = model_class.parse_all(results)
+    self
   end
 
   def inspect
     run_query
-    @query_result.inspect
+    @query_result
   end
 
 end

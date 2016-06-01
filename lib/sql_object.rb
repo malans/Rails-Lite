@@ -125,12 +125,7 @@ class SQLObject
 
   def self.create(params = {})
     newSQLObject = self.new(params)
-    begin
-      newSQLObject.save
-      true
-    rescue
-      false
-    end
+    newSQLObject.save
   end
 
   def self.after_initialize(*methods)
@@ -163,6 +158,8 @@ class SQLObject
       return true
     end
     false
+  rescue
+    false
   end
 
   def update
@@ -178,6 +175,8 @@ class SQLObject
       SQL
       return true
     end
+    false
+  rescue
     false
   end
 

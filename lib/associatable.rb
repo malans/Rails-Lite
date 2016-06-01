@@ -76,13 +76,15 @@ module Associatable
                                   options,
                                   block_given? ? query_options.call.where_params : {})
 
+
     define_method(name) do
       options = self.class.assoc_options[name]
 
       primary_key_value = self.send(options.primary_key)
+      # return value is a Relation object
       options
         .model_class
-        .where({options.foreign_key => primary_key_value}).where(options.query_options)
+        .where({options.foreign_key => primary_key_value}).where(options.query_options).run_query
     end
   end
 
@@ -102,7 +104,7 @@ module Associatable
                            .query_options
                            .keys
                            .map { |key| "#{through_table}.#{key} = ?" }.join(" AND ")
-      debugger;
+
       through_where_line.prepend("AND ") unless self.class.blank?(through_where_line)
       through_where_values = through_options.query_options.values
 

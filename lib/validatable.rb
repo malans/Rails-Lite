@@ -74,7 +74,7 @@ class UniquenessValidator < Validator
     @columns.each do |column|
       column_value = record.send(column)
       where_hash = {column => record.send(column)}.merge(where_scope_hash)
-      otherRecords = record.class.where(where_hash).inspect
+      otherRecords = record.class.where(where_hash).run_query.inspect
       record.errors[column] << "Must have unique #{where_hash.keys.length == 1 ?
         "" : "combination of"} #{where_hash.keys.join(', ')}." unless otherRecords.empty?
     end
