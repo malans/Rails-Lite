@@ -1,11 +1,13 @@
 require_relative 'searchable'
+require_relative './util.rb'
 require 'active_support/inflector'
 
 class AssocOptions
   attr_accessor(
     :foreign_key,
     :class_name,
-    :primary_key
+    :primary_key,
+    :query_options
   )
 
   def model_class
@@ -22,7 +24,8 @@ class BelongsToOptions < AssocOptions
     defaults = {
       foreign_key: "#{name}_id".to_sym,
       primary_key: :id,
-      class_name: name.to_s.camelcase
+      class_name: name.to_s.camelcase,
+      query_options: {}
     }
 
     defaults.keys.each do |key|
@@ -32,11 +35,12 @@ class BelongsToOptions < AssocOptions
 end
 
 class HasManyOptions < AssocOptions
-  def initialize(name, self_class_name, options = {})
+  def initialize(name, self_class_name, options = {}, query_options)
     defaults = {
       foreign_key: "#{self_class_name.underscore}_id".to_sym,
       primary_key: :id,
-      class_name: name.to_s.singularize.camelcase
+      class_name: name.to_s.singularize.camelcase,
+      query_options: query_options
     }
 
     defaults.keys.each do |key|
@@ -46,6 +50,7 @@ class HasManyOptions < AssocOptions
 end
 
 module Associatable
+  include Util
   # defines a method to access the association
   # ex: cat.belongs_to(owner) defines method cat.owner
   def belongs_to(name, options = {})
@@ -60,12 +65,16 @@ module Associatable
       options
         .model_class
         .where(options.primary_key => foreign_key_value)
+        .inspect
         .first
     end
   end
 
-  def has_many(name, options = {})
-    self.assoc_options[name] = HasManyOptions.new(name, self.name, options)
+  def has_many(name, options = {}, &query_options)
+    self.assoc_options[name] = HasManyOptions.new(name,
+                                  self.name,
+                                  options,
+                                  block_given? ? query_options.call.where_params : {})
 
     define_method(name) do
       options = self.class.assoc_options[name]
@@ -73,7 +82,7 @@ module Associatable
       primary_key_value = self.send(options.primary_key)
       options
         .model_class
-        .where(options.foreign_key => primary_key_value)
+        .where({options.foreign_key => primary_key_value}).where(options.query_options)
     end
   end
 
@@ -89,13 +98,28 @@ module Associatable
       through_table = through_options.table_name
       through_fk = through_options.foreign_key
       through_pk = through_options.primary_key
+      through_where_line = through_options
+                           .query_options
+                           .keys
+                           .map { |key| "#{through_table}.#{key} = ?" }.join(" AND ")
+      debugger;
+      through_where_line.prepend("AND ") unless self.class.blank?(through_where_line)
+      through_where_values = through_options.query_options.values
 
       source_table = source_options.table_name
       source_fk = source_options.foreign_key
       source_pk = source_options.primary_key
+      source_where_line = source_options
+                          .query_options
+                          .keys
+                          .map { |key| "#{source_table}.#{key} = ?" }.join(" AND ")
+      source_where_line.prepend("AND ") unless self.class.blank?(source_where_line)
+      source_where_values = source_options.query_options.values
+
+      query_values = through_where_values.concat(source_where_values)
 
       if through_options.is_a?(HasManyOptions) && source_options.is_a?(BelongsToOptions)
-        results = DBConnection.execute(<<-SQL, send(through_pk))
+        results = DBConnection.execute(<<-SQL, query_values.unshift(send(through_pk)))
           SELECT
             #{source_table}.*
           FROM
@@ -105,10 +129,10 @@ module Associatable
           ON
             #{through_table}.#{source_fk} = #{source_table}.#{source_pk}
           WHERE
-            #{through_table}.#{through_fk} = ?
+            #{through_table}.#{through_fk} = ? #{through_where_line} #{source_where_line}
         SQL
       elsif through_options.is_a?(BelongsToOptions) && source_options.is_a?(HasManyOptions)
-        results = DBConnection.execute(<<-SQL, send(through_fk))
+        results = DBConnection.execute(<<-SQL, query_values.unshift(send(through_fk)))
           SELECT
             #{source_table}.*
           FROM
@@ -118,10 +142,10 @@ module Associatable
           ON
             #{through_table}.#{source_pk} = #{source_table}.#{source_fk}
           WHERE
-            #{through_table}.#{through_pk} = ?
+            #{through_table}.#{through_pk} = ? #{through_where_line} #{source_where_line}
         SQL
       elsif through_options.is_a?(HasManyOptions) && source_options.is_a?(HasManyOptions)
-        results = DBConnection.execute(<<-SQL, send(through_pk))
+        results = DBConnection.execute(<<-SQL, query_values.unshift(send(through_pk)))
           SELECT
             #{source_table}.*
           FROM
@@ -131,7 +155,7 @@ module Associatable
           ON
             #{through_table}.#{source_pk} = #{source_table}.#{source_fk}
           WHERE
-            #{through_table}.#{through_fk} = ?
+            #{through_table}.#{through_fk} = ? #{through_where_line} #{source_where_line}
         SQL
       end
       source_options.model_class.parse_all(results)

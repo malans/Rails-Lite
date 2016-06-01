@@ -8,6 +8,7 @@
   </div>
   <br>
 
+<% # Add Friend Button %>
   <% unless current_user == @user || current_user.friends.include?(@user) %>
     <div>
       <form action="http://localhost:3000/friendships" method="POST">
@@ -20,6 +21,21 @@
   <% end %>
   <br>
 
+<% # Friend Requests Sent  %>
+  <div>
+    Sent Friend Requests
+    <ul>
+      <% @user.requested_friends.each do |requested_friend| %>
+        <li>
+          <a href="http://localhost:3000/users/<%= requested_friend.id %>"><%= requested_friend.username %></a>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+
+<% # Pending Friend Requests Received %>
+
+<% # Display All Friends %>
   <div>
     Friends
     <ul>
@@ -31,6 +47,7 @@
     </ul>
   </div>
 
+<% # Link to See All Users %>
   <div>
     <a href="http://localhost:3000/users">See All Users</a>
   </div>

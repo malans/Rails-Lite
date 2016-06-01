@@ -12,13 +12,27 @@ class User < SQLObject
 
   after_initialize :ensure_session_token
 
-  has_many :friendships
-  has_many :inverse_friendships,
-    foreign_key: :friend_id,
-    primary_key: :id,
-    class_name: "Friendship"
+  has_many(:sent_friendship_requests,
+  foreign_key: :user_id,
+  primary_key: :id,
+  class_name: "Friendship") { where status: "REQUESTED" }
 
-  has_many_through :friends, :friendships, :friend
+  has_many(:pending_friendship_requests,
+  foreign_key: :friend_id,
+  primary_key: :id,
+  class_name: "Friendship") { where status: "PENDING" }
+
+  has_many(:accepted_friendship_requests,
+  foreign_key: :user_id,
+  primary_key: :id,
+  class_name: "Friendship") { where status: "ACCEPTED" }
+
+  # has_many :inverse_friendships,
+  #   foreign_key: :friend_id,
+  #   primary_key: :id,
+  #   class_name: "Friendship"
+
+  has_many_through :friends, :accepted_friendship_requests, :friend
 
 
   def self.find_by_credentials(username, password)
@@ -44,6 +58,14 @@ class User < SQLObject
     self.session_token = User.generate_session_token
     self.save
     self.session_token
+  end
+
+  def requested_friends
+    friendship_requests = friendships.select do |friendship|
+      friendship.status = "REQUESTED"
+    end
+
+    friendship_requests.collect { |friendship_request| friendship_request.friend }
   end
 
 end

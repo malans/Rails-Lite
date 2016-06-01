@@ -9,7 +9,6 @@ class FriendshipsController < ApplicationController
     Friendship.create({user_id: requesting_id, friend_id: requested_id, status: "PENDING"})
 
     # # This should be a method in SQLObject called transaction,
-    # # like ActiveRecord::Base.transaction
     # results = DBConnection.execute(<<-SQL, requesting_id, requested_id, requested_id, requesting_id)
     #   BEGIN TRANSACTION;
     #     INSERT INTO
