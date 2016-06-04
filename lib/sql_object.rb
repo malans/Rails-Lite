@@ -5,12 +5,23 @@ require 'byebug'
 require_relative './searchable'
 require_relative './associatable'
 require_relative './validatable'
+require_relative './delegate'
 
 class SQLObject
-  # after_initialize_methods should be a class instance variable, unique to
-  # each subclass of SQLObject
+  extend Delegate
+  # delegate method called in class scope delegates instance method call to instance method
+
   class << self
+    extend Delegate
+    # delegate method call in singleton class scope delegates class method call to class method
+
     attr_accessor :after_initialize_methods
+
+    delegate :select, :from, :join, :where, to: :newRelation
+  end
+
+  def self.newRelation
+    Relation.new(self)
   end
 
   def self.columns

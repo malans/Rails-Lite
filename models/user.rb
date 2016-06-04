@@ -18,7 +18,7 @@ class User < SQLObject
   class_name: "Friendship") { where status: "REQUESTED" }
 
   has_many(:pending_friendship_requests,
-  foreign_key: :friend_id,
+  foreign_key: :user_id,
   primary_key: :id,
   class_name: "Friendship") { where status: "PENDING" }
 
@@ -26,11 +26,6 @@ class User < SQLObject
   foreign_key: :user_id,
   primary_key: :id,
   class_name: "Friendship") { where status: "ACCEPTED" }
-
-  # has_many :inverse_friendships,
-  #   foreign_key: :friend_id,
-  #   primary_key: :id,
-  #   class_name: "Friendship"
 
   has_many_through :friends, :accepted_friendship_requests, :friend
   has_many_through :requested_friends, :sent_friendship_requests, :friend

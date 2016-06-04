@@ -65,26 +65,29 @@ module Associatable
       options
         .model_class
         .where(options.primary_key => foreign_key_value)
-        .inspect
+        .run_query
+        .query_result
         .first
     end
   end
 
   def has_many(name, options = {}, &query_options)
-    self.assoc_options[name] = HasManyOptions.new(name,
-                                  self.name,
-                                  options,
-                                  block_given? ? query_options.call.where_params : {})
+    if options.has_key?(:through) && options.has_key?(:source)
+      has_many_through(name, options[:through], options[:source])
+    else
+      self.assoc_options[name] = HasManyOptions.new(name,
+                                    self.name,
+                                    options,
+                                    block_given? ? query_options.call.where_params : {})
+      define_method(name) do
+        options = self.class.assoc_options[name]
 
-
-    define_method(name) do
-      options = self.class.assoc_options[name]
-
-      primary_key_value = self.send(options.primary_key)
-      # return value is a Relation object
-      options
-        .model_class
-        .where({options.foreign_key => primary_key_value}).where(options.query_options).run_query
+        primary_key_value = self.send(options.primary_key)
+        # return value is a Relation object
+        options
+          .model_class
+          .where({options.foreign_key => primary_key_value}).where(options.query_options).run_query
+      end
     end
   end
 
@@ -93,6 +96,60 @@ module Associatable
   end
 
   def has_many_through(name, through_name, source_name)
+    # returns a Relation object
+    define_method(name) do
+      through_options = self.class.assoc_options[through_name]
+      source_options = through_options.model_class.assoc_options[source_name]
+
+      through_table = through_options.table_name
+      through_fk = through_options.foreign_key
+      through_pk = through_options.primary_key
+
+      through_where_line = through_options
+            .query_options
+            .keys
+            .map { |key| "#{through_table}.#{key}".to_sym }
+      through_where_values = through_options.query_options.values
+
+      source_table = source_options.table_name
+      source_fk = source_options.foreign_key
+      source_pk = source_options.primary_key
+
+      source_where_line = source_options
+            .query_options
+            .keys
+            .map { |key| "#{source_table}.#{key}".to_sym }
+      source_where_values = source_options.query_options.values
+
+      query_values = through_where_values.concat(source_where_values)
+
+      if through_options.is_a?(HasManyOptions) && source_options.is_a?(BelongsToOptions)
+        query_line = through_where_line.concat(source_where_line).unshift("#{through_table}.#{through_fk}".to_sym)
+        relation = source_options.model_class.select("#{source_table}.*")
+                                   .from(through_table)
+                                   .join("#{source_table} ON #{through_table}.#{source_fk} = #{source_table}.#{source_pk}")
+                                   .where(query_line.zip(query_values.unshift(send(through_pk))).to_h)  # WHERE #{through_table}.#{through_fk} = ? #{through_where_line} #{source_where_line}
+      elsif through_options.is_a?(BelongsToOptions) && source_options.is_a?(HasManyOptions)
+        query_line = through_where_line.concat(source_where_line).unshift("#{through_table}.#{through_pk}".to_sym)
+        relation = source_options.model_class.select("#{source_table}.*")
+                                   .from(through_table)
+                                   .join("#{source_table} ON #{through_table}.#{source_pk} = #{source_table}.#{source_fk}")
+                                   .where(query_line.zip(query_values.unshift(send(through_fk))).to_h)  # WHERE #{through_table}.#{through_pk} = ? #{through_where_line} #{source_where_line}
+      elsif through_options.is_a?(HasManyOptions) && source_options.is_a?(HasManyOptions)
+        query_line = through_where_line.concat(source_where_line).unshift("#{through_table}.#{through_fk}".to_sym)
+        relation = source_options.model_class.select("#{source_table}.*")
+                                   .from(through_table)
+                                   .join("#{source_table} ON #{through_table}.#{source_pk} = #{source_table}.#{source_fk}")
+                                   .where(query_line.zip(query_values.unshift(send(through_pk))).to_h)  # WHERE #{through_table}.#{through_fk} = ? #{through_where_line} #{source_where_line}
+      end
+      relation.run_query
+    end
+  end
+
+  def has_many_through_direct_sql(name, through_name, source_name)
+    # This method is here only for reference purposes
+    # It was how has_many_through was implemented with direct SQL queries before a Relation class
+    # was implemented
     define_method(name) do
       through_options = self.class.assoc_options[through_name]
       source_options = through_options.model_class.assoc_options[source_name]
@@ -104,7 +161,6 @@ module Associatable
                            .query_options
                            .keys
                            .map { |key| "#{through_table}.#{key} = ?" }.join(" AND ")
-
       through_where_line.prepend("AND ") unless self.class.blank?(through_where_line)
       through_where_values = through_options.query_options.values
 
@@ -160,7 +216,7 @@ module Associatable
             #{through_table}.#{through_fk} = ? #{through_where_line} #{source_where_line}
         SQL
       end
-      source_options.model_class.parse_all(results)
+      source_options.model_class.parse_all(results)  #Array
     end
   end
 
