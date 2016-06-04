@@ -29,7 +29,7 @@ class User < SQLObject
 
   has_many_through :friends, :accepted_friendship_requests, :friend
   has_many_through :requested_friends, :sent_friendship_requests, :friend
-  has_many_through :pending_friends, :pending_friendship_requests, :user
+  has_many_through :pending_friends, :pending_friendship_requests, :friend
 
 
   def self.find_by_credentials(username, password)

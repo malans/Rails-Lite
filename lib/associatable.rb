@@ -95,6 +95,30 @@ module Associatable
     @assoc_options ||= {}
   end
 
+  def has_one_through(name, through_name, source_name)
+
+    define_method(name) do
+      through_options = self.class.assoc_options[through_name]
+      source_options = through_options.model_class.assoc_options[source_name]
+
+      through_table = through_options.table_name
+      through_fk = through_options.foreign_key
+      through_pk = through_options.primary_key
+
+      source_table = source_options.table_name
+      source_fk = source_options.foreign_key
+      source_pk = source_options.primary_key
+
+      query_line = through_where_line.concat(source_where_line).unshift("#{through_table}.#{through_fk}".to_sym)
+      relation = source_options.model_class.select("#{source_table}.*")
+                                 .from(through_table)
+                                 .join("#{source_table} ON #{through_table}.#{source_fk} = #{source_table}.#{source_pk}")
+                                 .where("#{through_table}.#{through_pk}".to_sym => send(through_fk))
+
+      relation.run_query.query_result.first
+    end
+  end
+
   def has_many_through(name, through_name, source_name)
     # returns a Relation object
     define_method(name) do
@@ -143,111 +167,6 @@ module Associatable
                                    .where(query_line.zip(query_values.unshift(send(through_pk))).to_h)  # WHERE #{through_table}.#{through_fk} = ? #{through_where_line} #{source_where_line}
       end
       relation.run_query
-    end
-  end
-
-  def has_many_through_direct_sql(name, through_name, source_name)
-    # This method is here only for reference purposes
-    # It was how has_many_through was implemented with direct SQL queries before a Relation class
-    # was implemented
-    define_method(name) do
-      through_options = self.class.assoc_options[through_name]
-      source_options = through_options.model_class.assoc_options[source_name]
-
-      through_table = through_options.table_name
-      through_fk = through_options.foreign_key
-      through_pk = through_options.primary_key
-      through_where_line = through_options
-                           .query_options
-                           .keys
-                           .map { |key| "#{through_table}.#{key} = ?" }.join(" AND ")
-      through_where_line.prepend("AND ") unless self.class.blank?(through_where_line)
-      through_where_values = through_options.query_options.values
-
-      source_table = source_options.table_name
-      source_fk = source_options.foreign_key
-      source_pk = source_options.primary_key
-      source_where_line = source_options
-                          .query_options
-                          .keys
-                          .map { |key| "#{source_table}.#{key} = ?" }.join(" AND ")
-      source_where_line.prepend("AND ") unless self.class.blank?(source_where_line)
-      source_where_values = source_options.query_options.values
-
-      query_values = through_where_values.concat(source_where_values)
-
-      if through_options.is_a?(HasManyOptions) && source_options.is_a?(BelongsToOptions)
-        results = DBConnection.execute(<<-SQL, query_values.unshift(send(through_pk)))
-          SELECT
-            #{source_table}.*
-          FROM
-            #{through_table}
-          JOIN
-            #{source_table}
-          ON
-            #{through_table}.#{source_fk} = #{source_table}.#{source_pk}
-          WHERE
-            #{through_table}.#{through_fk} = ? #{through_where_line} #{source_where_line}
-        SQL
-      elsif through_options.is_a?(BelongsToOptions) && source_options.is_a?(HasManyOptions)
-        results = DBConnection.execute(<<-SQL, query_values.unshift(send(through_fk)))
-          SELECT
-            #{source_table}.*
-          FROM
-            #{through_table}
-          JOIN
-            #{source_table}
-          ON
-            #{through_table}.#{source_pk} = #{source_table}.#{source_fk}
-          WHERE
-            #{through_table}.#{through_pk} = ? #{through_where_line} #{source_where_line}
-        SQL
-      elsif through_options.is_a?(HasManyOptions) && source_options.is_a?(HasManyOptions)
-        results = DBConnection.execute(<<-SQL, query_values.unshift(send(through_pk)))
-          SELECT
-            #{source_table}.*
-          FROM
-            #{through_table}
-          JOIN
-            #{source_table}
-          ON
-            #{through_table}.#{source_pk} = #{source_table}.#{source_fk}
-          WHERE
-            #{through_table}.#{through_fk} = ? #{through_where_line} #{source_where_line}
-        SQL
-      end
-      source_options.model_class.parse_all(results)  #Array
-    end
-  end
-
-  def has_one_through(name, through_name, source_name)
-
-    define_method(name) do
-      through_options = self.class.assoc_options[through_name]
-      source_options = through_options.model_class.assoc_options[source_name]
-
-      through_table = through_options.table_name
-      through_fk = through_options.foreign_key
-      through_pk = through_options.primary_key
-
-      source_table = source_options.table_name
-      source_fk = source_options.foreign_key
-      source_pk = source_options.primary_key
-
-      results = DBConnection.execute(<<-SQL, send(through_fk))
-        SELECT
-          #{source_table}.*
-        FROM
-          #{through_table}
-        JOIN
-          #{source_table}
-        ON
-          #{through_table}.#{source_fk} = #{source_table}.#{source_pk}
-        WHERE
-          #{through_table}.#{through_pk} = ?
-      SQL
-
-      source_options.model_class.parse_all(results).first
     end
   end
 end

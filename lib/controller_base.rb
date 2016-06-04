@@ -81,10 +81,19 @@ class ControllerBase
   def render(template_name)
     # construct path for template_name
     # template naming convention used: "views/#{controller_name}/#{template_name}.html.erb"
+
+    path_split = template_name.to_s.split("/").collect(&:to_sym)
+    if path_split.length == 2
+      path_controller_name = path_split.first.to_s
+      template_name = path_split.last.to_s
+    else
+      path_controller_name = self.class.name.underscore
+    end
+
     dir_path = File.dirname(__FILE__)
     template_fname = File.join(
       dir_path, "..",
-      "views", self.class.name.underscore, "#{template_name}.html.erb"
+      "views", path_controller_name, "#{template_name}.html.erb"
     )
 
     layout_template_fname = File.join(

@@ -173,6 +173,21 @@ class SQLObject
     false
   end
 
+  def delete
+    unless self.id.nil?
+      begin
+        results = DBConnection.execute(<<-SQL, id)
+          DELETE FROM #{self.class.table_name}
+          WHERE #{self.class.table_name}.id = ?
+        SQL
+        return true
+      rescue
+        return false
+      end
+    end
+    false
+  end
+
   def update
     if valid?
       set_line = self.class.columns.map { |column| "#{column} = ?"}.join(", ")

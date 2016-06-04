@@ -10,18 +10,21 @@
   <br>
 
   <% unless current_user == @user || current_user.friends.include?(@user) %>
+    <%# If received friend request from this user, show accept button %>
     <% if current_user.pending_friends.include?(@user) %>
       <div>
-        <form action="http://localhost:3000/friendships/<%= pending_friendship_request.id %>" method="POST">
+        <form action="http://localhost:3000/friendships/<%= current_user.pending_friendship_requests.where({friend_id: @user.id}.first.id) %>" method="POST">
           <input type="hidden" name="_method" value="PUT">
           <input type="hidden" name="my_authenticity_token" value="<%= my_form_authenticity_token %>">
           <input type="submit" value="Accept">
         </form>
       </div>
+    <%# If sent friend request to this user, show disabled button saying that request has been made %>
     <% elsif current_user.requested_friends.include?(@user) %>
       <div>
         <button type="button" disabled>Friend requested</button>
       </div>
+    <%# Else, show button to add friend %>
     <% else %>
       <div>
         <form action="http://localhost:3000/friendships" method="POST">
@@ -31,6 +34,7 @@
           <input type="submit" value="Add Friend">
         </form>
       </div>
+    <% end %>
   <% end %>
 
   <br>
@@ -53,7 +57,7 @@
     <ul>
       <% @user.pending_friendship_requests.each do |pending_friendship_request| %>
         <li>
-          <a href="http://localhost:3000/users/<%= pending_friendship_request.friend.id %>"><%= pending_friendship_request.user.username %></a>
+          <a href="http://localhost:3000/users/<%= pending_friendship_request.friend.id %>"><%= pending_friendship_request.friend.username %></a>
           <form action="http://localhost:3000/friendships/<%= pending_friendship_request.id %>" method="POST">
             <input type="hidden" name="_method" value="PUT">
             <input type="hidden" name="my_authenticity_token" value="<%= my_form_authenticity_token %>">
