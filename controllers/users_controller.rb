@@ -1,7 +1,8 @@
 require 'byebug'
 
 class UsersController < ApplicationController
-  before_action :require_login, only: [:show]
+  before_action :require_login, only: [:show, :index]
+  before_action :require_not_logged_in, only: [:new]
 
   def index
     @users = User.all

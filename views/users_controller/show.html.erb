@@ -11,62 +11,27 @@
 
   <% unless current_user == @user || current_user.friends.include?(@user) %>
     <%# If received friend request from this user, show accept button %>
+    <div>
     <% if current_user.pending_friends.include?(@user) %>
-      <div>
-        <form action="http://localhost:3000/friendships/<%= current_user.pending_friendship_requests.where({friend_id: @user.id}.first.id) %>" method="POST">
-          <input type="hidden" name="_method" value="PUT">
-          <input type="hidden" name="my_authenticity_token" value="<%= my_form_authenticity_token %>">
-          <input type="submit" value="Accept">
-        </form>
-      </div>
+      <form action="http://localhost:3000/friendships/<%= current_user.pending_friendship_requests.where({friend_id: @user.id}.first.id) %>" method="POST">
+        <input type="hidden" name="_method" value="PUT">
+        <input type="hidden" name="my_authenticity_token" value="<%= my_form_authenticity_token %>">
+        <input type="submit" value="Accept">
+      </form>
     <%# If sent friend request to this user, show disabled button saying that request has been made %>
     <% elsif current_user.requested_friends.include?(@user) %>
-      <div>
-        <button type="button" disabled>Friend requested</button>
-      </div>
+      <button type="button" disabled>Friend requested</button>
     <%# Else, show button to add friend %>
     <% else %>
-      <div>
-        <form action="http://localhost:3000/friendships" method="POST">
-          <input type="hidden" name="my_authenticity_token" value="<%= my_form_authenticity_token %>">
-          <input type="hidden" name="friendship[requesting_id]" value="<%= current_user.id %>">
-          <input type="hidden" name="friendship[requested_id]" value="<%= @user.id %>">
-          <input type="submit" value="Add Friend">
-        </form>
-      </div>
+      <form action="http://localhost:3000/friendships" method="POST">
+        <input type="hidden" name="my_authenticity_token" value="<%= my_form_authenticity_token %>">
+        <input type="hidden" name="friendship[requesting_id]" value="<%= current_user.id %>">
+        <input type="hidden" name="friendship[requested_id]" value="<%= @user.id %>">
+        <input type="submit" value="Add Friend">
+      </form>
     <% end %>
+    </div>
   <% end %>
-
-  <br>
-
-  <div>
-    <p>Sent Friend Requests</p>
-    <ul>
-      <% @user.requested_friends.each do |requested_friend| %>
-        <li>
-          <a href="http://localhost:3000/users/<%= requested_friend.id %>"><%= requested_friend.username %></a>
-        </li>
-      <% end %>
-    </ul>
-  </div>
-
-  <br>
-
-  <div>
-    Friend Requests Received
-    <ul>
-      <% @user.pending_friendship_requests.each do |pending_friendship_request| %>
-        <li>
-          <a href="http://localhost:3000/users/<%= pending_friendship_request.friend.id %>"><%= pending_friendship_request.friend.username %></a>
-          <form action="http://localhost:3000/friendships/<%= pending_friendship_request.id %>" method="POST">
-            <input type="hidden" name="_method" value="PUT">
-            <input type="hidden" name="my_authenticity_token" value="<%= my_form_authenticity_token %>">
-            <input type="submit" value="Accept">
-          </form>
-        </li>
-      <% end %>
-    </ul>
-  </div>
 
   <br>
 
@@ -81,7 +46,46 @@
     </ul>
   </div>
 
+  <% if current_user == @user %>
+    <div>
+      <p>Sent Friend Requests</p>
+      <ul>
+        <% @user.requested_friends.each do |requested_friend| %>
+          <li>
+            <a href="http://localhost:3000/users/<%= requested_friend.id %>"><%= requested_friend.username %></a>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+
+    <br>
+
+    <div>
+      Friend Requests Received
+      <ul>
+        <% @user.pending_friendship_requests.each do |pending_friendship_request| %>
+          <li class="listItem">
+            <a href="http://localhost:3000/users/<%= pending_friendship_request.friend.id %>"><%= pending_friendship_request.friend.username %></a>
+            <span class="indexListButton">
+              <form action="http://localhost:3000/friendships/<%= pending_friendship_request.id %>" method="POST">
+                <input type="hidden" name="_method" value="PUT">
+                <input type="hidden" name="my_authenticity_token" value="<%= my_form_authenticity_token %>">
+                <input type="submit" value="Accept">
+              </form>
+            </span>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
   <div>
     <a href="http://localhost:3000/users">See All Users</a>
   </div>
+
+  <% unless current_user == @user %>
+    <div>
+      <a href="http://localhost:3000/users/<%= current_user.id %>">Go to Profile Page</a>
+    </div>
+  <% end %>
 </html>

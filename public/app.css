@@ -1,0 +1,18 @@
+a:hover {
+  color: orange;
+}
+
+form {
+  display: inline;
+}
+
+.listItem {
+  padding: 0.2em;
+  width: 15em;
+  position: relative;
+}
+
+.indexListButton {
+  position: absolute;
+  right: 0
+}
