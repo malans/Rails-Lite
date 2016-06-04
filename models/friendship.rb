@@ -1,5 +1,4 @@
 require_relative './../lib/sql_object'
-require 'byebug'
 
 class Friendship < SQLObject
   finalize!

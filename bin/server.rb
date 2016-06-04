@@ -2,7 +2,6 @@ require 'rack'
 require_relative '../lib/controller_base'
 require_relative '../lib/router'
 Dir['./models/*.rb'].each {|file| require file }
-require 'byebug'
 
 MIME_TYPES = {
   "js" => "application/javascript",

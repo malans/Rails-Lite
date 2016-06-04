@@ -1,5 +1,3 @@
-require 'byebug'
-
 class FriendshipsController < ApplicationController
   # Create two entries for each friendship request
   # Should create a method "transaction" in SQLObject to perform operations on

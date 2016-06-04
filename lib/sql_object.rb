@@ -1,7 +1,6 @@
 require_relative 'db_connection'
 require 'active_support/inflector'
 require 'bcrypt'
-require 'byebug'
 require_relative './searchable'
 require_relative './associatable'
 require_relative './validatable'
